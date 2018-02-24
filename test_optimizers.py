@@ -92,7 +92,8 @@ def goptimizer3(winit, X, y, grad=gradient, obj=objective, steps=1000, eta=0.01,
 
 
 # number of steps is key here as well
-def adoptimizer(winit, X, y, grad=gradient, obj=objective, steps=500,
+# written by Sergey
+def adoptimizer(winit, X, y, grad=gradient, obj=objective, steps=50000,
                 rho=0.99, eps=1e-4, tol=1e-5):
     wc = wp = winit
     pObj = obj(wc, X, y)
@@ -118,7 +119,7 @@ def adoptimizer(winit, X, y, grad=gradient, obj=objective, steps=500,
 
     return wc, co
 
-
+# By Sergey as well
 def btoptimizer(winit, X, y, grad=gradient, obj=objective, steps=10000,
                 eta=0.01, mult=0.5, tol=1e-2):
 
@@ -149,6 +150,49 @@ def btoptimizer(winit, X, y, grad=gradient, obj=objective, steps=10000,
     return wc, co
 
 
+def goptimizerwithbt(winit, X, y, steps=100, eta=0.01, tol=1e-6):
+    wc = winit
+    eta = 1.0
+    beta = 0.5
+    alpha = 0.0001
+    Gradient = gradient(wc, X, y, l=0.)
+    while not gottol(Gradient, tol):
+        while objective(wc + eta * Gradient, X, y) > objective(wc, X, y) + alpha * eta * Gradient:
+            eta = eta * beta
+        wc = wc - eta * Gradient
+        Gradient = gradient(wc, X, y, l=0.)
+    return wc
+
+
+def momentum(winit, X, y, steps=100, eta=0.01, tol=1e-6):
+    vel_prev = wc = winit
+    gamma = 0.9
+    count = 0
+    Gradient = gradient(wc, X, y, l=0.)
+    while not gottol(Gradient, tol):
+        count = count + 1
+        vel = gamma*vel_prev + eta * gradient(wc, X, y)
+        wc = wc - vel
+        vel_prev = vel
+        Gradient = gradient(wc, X, y, l=0.)
+    return wc, count
+
+
+def nesterov(winit, X, y, steps=100, eta=0.01, tol=1e-6):
+    vel_prev = wc = winit
+    gamma = 0.9
+    count = 0
+    Gradient = gradient(wc, X, y, l=0.)
+    while not gottol(Gradient, tol):
+        count = count + 1
+        vel = gamma*vel_prev + eta * gradient(wc - gamma * vel_prev, X, y)
+        wc = wc - vel
+        print(wc)
+        vel_prev = vel
+        Gradient = gradient(wc, X, y, l=0.)
+    return wc, count
+
+# https://onlinecourses.science.psu.edu/stat462/node/101
 df = pd.read_excel('test.xlsx')
 X = np.array(df['X'])
 X = np.array([[1]*len(X), X]).T
@@ -179,3 +223,9 @@ print('Parameters from adadelta:', w_a)
 
 w_b, c_b = btoptimizer(w, X, y, steps=1000000, eta=1e-3, tol=1e-6)
 print('Parameters from backtracking:', w_b)
+
+w_m, count = momentum(w, X, y, steps=0, eta=1e-2, tol=1e-6)
+print('Parameters from momentum:', w_m, count)
+
+w_n, count = nesterov(w, X, y, steps=0, eta=1e-2, tol=1e-6)
+print('Parameters from nestorov:', w_n, count)

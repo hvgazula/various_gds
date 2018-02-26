@@ -133,7 +133,7 @@ def adoptimizer(winit,
                 rho=0.99,
                 eps=1e-4,
                 tol=1e-5):
-    wc = wp = winit
+    wc = winit
     pObj = obj(wc, X, y)
     Eg2 = 0
     EdW2 = 0

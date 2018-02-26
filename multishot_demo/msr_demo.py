@@ -10,6 +10,20 @@ import pandas as pd
 import statsmodels.api as sm
 import scipy as sp
 
+
+def objective(w, X, y, l=0.0):
+    return (1 / 2 * len(X)) * np.sum(
+        (np.dot(X, w) - y)**2) + l * np.dot(w.T, w) / 2.
+
+
+def gradient(w, X, y, l=0.0):
+    return (1 / len(X)) * np.dot(X.T, np.dot(X, w) - y) + l * w
+
+
+def gottol(v, tol=1e-5):
+    return np.sum(np.square(v)) <= tol
+
+
 # Pooled regression
 df = pd.read_excel('test.xlsx')
 X = np.array(df['X'])
@@ -19,10 +33,10 @@ y = np.array(df['Y']).T
 w = np.array([0,0])
 
 normal_w = np.matmul(np.linalg.inv(np.matmul(X.T, X)), np.matmul(X.T, y))
-print('Parameters from Normal Equation:', normal_w)
+print('Normal Equation:', normal_w)
 
 model = sm.OLS(y, X.astype(float)).fit()
-print('Parameters from Stats Models', model.params)
+print('Stats Models', model.params)
 
 df1 = pd.read_csv('site1.csv')
 X1 = np.array(df1['X'])
@@ -44,7 +58,7 @@ X4 = np.array(df4['X'])
 X4 = np.array([[1]*len(X4), X4]).T
 y4 = np.array(df4['Y']).T
 
-# single-shot regression
+############### Single-shot regression ############### 
 model1 = sm.OLS(y1, X1.astype(float)).fit()
 model2 = sm.OLS(y2, X2.astype(float)).fit()
 model3 = sm.OLS(y3, X3.astype(float)).fit()
@@ -52,11 +66,12 @@ model4 = sm.OLS(y4, X4.astype(float)).fit()
 
 sum_params = [model1.params, model2.params, model3.params, model4.params]
 count_y_local = [len(y1), len(y2), len(y3), len(y4)]
-avg_beta_vector = np.average(sum_params, weights=count_y_local, axis=0)
-#avg_beta_vector = np.average(sum_params, axis=0)
-print('Parameters from Single-shot: ', avg_beta_vector)
+avg_beta_vector_wa = np.average(sum_params, weights=count_y_local, axis=0)
+avg_beta_vector_sa = np.average(sum_params, axis=0)
+print('Single-shot (WA): ', avg_beta_vector_wa)
+print('Single-shot (SA): ', avg_beta_vector_sa)
 
-# multi-shot regression (normal equation)
+############### Multi-shot regression (normal equation) ############### 
 cov1 = np.matmul(np.matrix.transpose(X1), X1)
 cov2 = np.matmul(np.matrix.transpose(X2), X2)
 cov3 = np.matmul(np.matrix.transpose(X3), X3)
@@ -75,23 +90,6 @@ avg_beta_vector = np.matmul(
 
 print('Parameters from multi-shot (normal eqn.): ', avg_beta_vector)
 
-# multi-shot regression (gradient descent)
-def gottol(vector, tol=1e-5):
-    """Check if the gradient meets the tolerances"""
-    return np.sum(np.square(vector))
-
-
-def objective(weights, X, y, lamb=0.0):
-    """calculates the Objective function value"""
-    return (1 / 2 * len(X)) * np.sum(
-        (np.dot(X, weights) - y)**2) + lamb * np.linalg.norm(
-            weights, ord=2) / 2.
-
-
-def gradient(weights, X, y, lamb=0.0):
-    """Computes the gradient"""
-    return (1 / len(X)) * np.dot(X.T, np.dot(X, weights) - y) + lamb * weights
-
 
 ##################### Vanilla Gradient Descent #####################
 wp = np.zeros(X1.shape[1]) # Step 01
@@ -105,15 +103,15 @@ while grad_tol > tol: # Step 02
     count = count + 1
 
     # Step 05
-    grad_local1 = gradient(wp, X1, y1, lamb=0)
-    grad_local2 = gradient(wp, X2, y2, lamb=0)
-    grad_local3 = gradient(wp, X3, y3, lamb=0)
-    grad_local4 = gradient(wp, X4, y4, lamb=0)
+    grad_local1 = gradient(wp, X1, y1, l=0)
+    grad_local2 = gradient(wp, X2, y2, l=0)
+    grad_local3 = gradient(wp, X3, y3, l=0)
+    grad_local4 = gradient(wp, X4, y4, l=0)
 
-    obj_local1 = objective(wp, X1, y1, lamb=0)
-    obj_local2 = objective(wp, X2, y2, lamb=0)
-    obj_local3 = objective(wp, X3, y3, lamb=0)
-    obj_local4 = objective(wp, X4, y4, lamb=0)
+    obj_local1 = objective(wp, X1, y1, l=0)
+    obj_local2 = objective(wp, X2, y2, l=0)
+    obj_local3 = objective(wp, X3, y3, l=0)
+    obj_local4 = objective(wp, X4, y4, l=0)
 
     # at remote Step 08
     grad_remote = grad_local1 + grad_local2 + grad_local3 + grad_local4
@@ -133,7 +131,6 @@ while grad_tol > tol: # Step 02
 
         # Step 12
         eta = eta/2
-        print('halving')
 
     # Step 13
     else:
@@ -152,7 +149,6 @@ while grad_tol > tol: # Step 02
         wp = wc
 
         grad_tol = gottol(grad_remote, tol)
-        print(grad_tol)
 
 #    if curr_obj_remote > prev_obj_remote:  # 11
 #        eta = 0.5 * eta # 12
@@ -174,21 +170,20 @@ print('Parameters from multi-shot (gd): {}, iterations: {}'.format(avg_beta_vect
 
 ######################## multi-shot regression (momentum) ####################
 vel_prev = wc = np.zeros(X1.shape[1])
-#prev_obj_remote = np.inf
 grad_remote = np.random.rand(X1.shape[1])
 tol = 1e-6
 eta = 1e-2
-gamma = 0.9
+gamma = 0.85
 
 count = 0
 while not gottol(grad_remote, tol):
     count = count + 1
 
     # At local
-    grad_local1 = gradient(wc, X1, y1, lamb=0)
-    grad_local2 = gradient(wc, X2, y2, lamb=0)
-    grad_local3 = gradient(wc, X3, y3, lamb=0)
-    grad_local4 = gradient(wc, X4, y4, lamb=0)
+    grad_local1 = gradient(wc, X1, y1, l=0)
+    grad_local2 = gradient(wc, X2, y2, l=0)
+    grad_local3 = gradient(wc, X3, y3, l=0)
+    grad_local4 = gradient(wc, X4, y4, l=0)
 
 #    curr_obj_local1 = objective(wc, X1, y1, lamb=0)
 #    curr_obj_local2 = objective(wc, X2, y2, lamb=0)
@@ -225,4 +220,37 @@ while not gottol(grad_remote, tol):
 avg_beta_vector = wc
 
 print('Parameters from multi-shot (momentum): {}, iterations: {}'.format(avg_beta_vector, count))
+
+######################## multi-shot regression (Nesterov) ####################
+vel_prev = wc = np.zeros(X1.shape[1])
+grad_remote = np.random.rand(X1.shape[1])
+tol = 1e-6
+eta = 1e-2
+gamma = 0.85
+
+count = 0
+while not gottol(grad_remote, tol):
+    count = count + 1
+
+    # At local
+    grad_local1 = gradient(wc, X1, y1, l=0)
+    grad_local2 = gradient(wc, X2, y2, l=0)
+    grad_local3 = gradient(wc, X3, y3, l=0)
+    grad_local4 = gradient(wc, X4, y4, l=0)
+
+    # at remote
+    grad_remote = (grad_local1 + grad_local2 + grad_local3 + grad_local4)/4
+#    grad_local_vec = [grad_local1, grad_local2, grad_local3, grad_local4]
+#    count_y_local = [len(y1), len(y2), len(y3), len(y4)]
+#    grad_remote = np.average(grad_local_vec, weights=count_y_local, axis=0)
+
+#    vel = gamma*vel_prev + eta * grad_remote
+#    vel = gamma * vel_prev + eta * gradient(wc - gamma * vel_prev, X, y)
+    vel = gamma*vel_prev + eta * grad_remote - gradient(gamma * vel_prev, X, y)
+    wc = wc - vel
+    vel_prev = vel
+
+avg_beta_vector = wc
+
+print('Parameters from multi-shot (Nesterov): {}, iterations: {}'.format(avg_beta_vector, count))
 

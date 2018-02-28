@@ -336,16 +336,35 @@ def gd_nesterov(winit, X, y, steps=100, eta=0.01, tol=1e-6):
 # https://github.com/benbo/adagrad
 def adagrad(w, X, y, steps=1000, eta=1e-2, tol=1e-6):
     count = 0
-    fudge_factor = 1e-8
+    eps = 1e-8
     gti = np.zeros(w.shape[0])
     wc = w
     grad = gradient(wc, X, y)
     while not gottol(grad, tol):
         count = count + 1
         gti += grad**2
-        adjusted_grad = grad / (fudge_factor + np.sqrt(gti))
+        adjusted_grad = grad / (eps + np.sqrt(gti))
         wc = wc - eta * adjusted_grad
         grad = gradient(wc, X, y)
+    return wc, count
+
+
+# Little Dangerous
+def rmsprop(w, X, y, steps=0, eta=1e-3, tol=1e-6):
+    wc = w
+    eps = 1e-8
+    rho = 0.9
+
+    grad = gradient(wc, X, y)
+    Eg2 = grad**2
+    count = 0
+    for i in range(steps):
+        Eg2 = rho * Eg2 + (1 - rho) * (grad**2)
+        adjusted_grad = grad / (eps + np.sqrt(Eg2))
+        wc = wc - eta * adjusted_grad
+        grad = gradient(wc, X, y)
+        if gottol(grad, tol):
+            break
     return wc, count
 
 
@@ -397,3 +416,6 @@ print('{:<25}{}{}'.format('Nesterov:', w_n, count_n))
 
 w_adg, count_adg = adagrad(w, X, y, steps=0, eta=1, tol=1e-6)
 print('{:<25}{}{}'.format('Adagrad:', w_adg, count_adg))
+
+w_rms, count_rms = rmsprop(w, X, y, steps=10000, eta=1e-2, tol=1e-6)
+print('{:<25}{}{}'.format('RMSProp:', w_rms, count_rms))

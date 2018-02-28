@@ -3,11 +3,11 @@
 Created on Sun Jan  7 14:02:00 2018
 
 @author: Harsh
-@Notes: 
+@Notes:
 --> This file consists of all kinds of gradient descent algorithms in the
  pooled case
 --> For all the algorithm, a tolerance of 1e-5/1e-6 is assumed consistently
---> 
+-->
 """
 
 import numpy as np
@@ -18,13 +18,13 @@ import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 
-def objective(w, X, y, l=0.0):
+def objective(w, X, y, lamb=0.0):
     return (1 / 2 * len(X)) * np.sum(
-        (np.dot(X, w) - y)**2) + l * np.dot(w.T, w) / 2.
+        (np.dot(X, w) - y)**2) + lamb * np.dot(w.T, w) / 2.
 
 
-def gradient(w, X, y, l=0.0):
-    return (1 / len(X)) * np.dot(X.T, np.dot(X, w) - y) + l * w
+def gradient(w, X, y, lamb=0.0):
+    return (1 / len(X)) * np.dot(X.T, np.dot(X, w) - y) + lamb * w
 
 
 def gottol(v, tol=1e-5):
@@ -39,7 +39,8 @@ def gd_for(winit, X, y, steps=1000, eta=0.01, tol=1e-6):
     for i in range(steps):
         Gradient = gradient(wc, X, y)
         wc = wc - eta * gradient(wc, X, y)
-        if gottol(Gradient, tol): break
+        if gottol(Gradient, tol):
+            break
     return wc, i
 
 
@@ -50,11 +51,11 @@ def gd_while(winit, X, y, steps=100, eta=0.01, tol=1e-6):
     wc = winit
 
     count = 0
-    Gradient = gradient(wc, X, y, l=0.)
+    Gradient = gradient(wc, X, y)
     while not gottol(Gradient, tol):
         count = count + 1
         wc = wc - eta * Gradient
-        Gradient = gradient(wc, X, y, l=0.)
+        Gradient = gradient(wc, X, y)
     return wc, count
 
 
@@ -74,13 +75,14 @@ def gd_for_heuristic(winit,
     co = []
 
     for i in range(steps):
-        cObj = objective(wc, X, y, l=0.)
+        cObj = objective(wc, X, y)
         if cObj > pObj:
             eta = eta / 2
             continue
 
-        Gradient = gradient(wc, X, y, l=0.)
-        if gottol(Gradient, tol): break
+        Gradient = gradient(wc, X, y)
+        if gottol(Gradient, tol):
+            break
         wc = wp - eta * Gradient
         co.append(cObj)
 
@@ -106,11 +108,11 @@ def gd_while_heuristic(winit,
     co = []
 
     count = 0
-    Gradient = gradient(wc, X, y, l=0.)
+    Gradient = gradient(wc, X, y)
     while not gottol(Gradient, tol):
         count = count + 1
         wc = wp - eta * Gradient
-        cObj = objective(wc, X, y, l=0.)
+        cObj = objective(wc, X, y)
         if cObj > pObj:
             eta = eta / 2
             continue
@@ -118,7 +120,7 @@ def gd_while_heuristic(winit,
             co.append(cObj)
             pObj = cObj
             wp = wc
-            Gradient = gradient(wc, X, y, l=0.)
+            Gradient = gradient(wc, X, y)
     return wc, co, count
 
 
@@ -140,11 +142,13 @@ def adoptimizer(winit,
     co = []
 
     for i in range(steps):
-        cObj = objective(wc, X, y, l=0.)
-        if cObj > pObj: break
+        cObj = objective(wc, X, y)
+        if cObj > pObj:
+            break
 
-        Gradient = gradient(wc, X, y, l=0.)
-        if gottol(Gradient, tol): break
+        Gradient = gradient(wc, X, y)
+        if gottol(Gradient, tol):
+            break
 
         # ADADELTA
         Eg2 = rho * Eg2 + (1 - rho) * Gradient * Gradient
@@ -177,13 +181,14 @@ def adoptimizer_while(winit,
     co = []
 
     count = 0
-    Gradient = gradient(wc, X, y, l=0.)
+    Gradient = gradient(wc, X, y)
     while not gottol(Gradient, tol):
         count = count + 1
-        cObj = objective(wc, X, y, l=0.)
-        if cObj > pObj: break
+        cObj = objective(wc, X, y)
+        if cObj > pObj:
+            break
 
-        Gradient = gradient(wc, X, y, l=0.)
+        Gradient = gradient(wc, X, y)
 
         # ADADELTA
         Eg2 = rho * Eg2 + (1 - rho) * Gradient * Gradient
@@ -209,7 +214,7 @@ def btoptimizer(winit,
                 tol=1e-2):
 
     wc = wp = winit
-    gradval = grad(wc, X, y, l=0.)
+    gradval = grad(wc, X, y)
     pObj = obj(wc, X, y)
     backtrack = False
     co = []
@@ -223,7 +228,7 @@ def btoptimizer(winit,
             backtrack = True
 
         if not backtrack:
-            gradval = gradient(wc, X, y, l=0.)
+            gradval = gradient(wc, X, y)
             wp = wc
             co.append(cObj)
             pObj = cObj
@@ -249,7 +254,7 @@ def btoptimizer_while(winit,
                       tol=1e-2):
 
     wc = wp = winit
-    gradval = grad(wc, X, y, l=0.)
+    gradval = grad(wc, X, y)
     pObj = obj(wc, X, y)
     backtrack = False
     co = []
@@ -265,7 +270,7 @@ def btoptimizer_while(winit,
             backtrack = True
 
         if not backtrack:
-            gradval = gradient(wc, X, y, l=0.)
+            gradval = gradient(wc, X, y)
             wp = wc
             co.append(cObj)
             pObj = cObj
@@ -299,13 +304,13 @@ def gd_momentum(winit, X, y, steps=100, eta=0.01, tol=1e-6):
     vel_prev = wc = winit
     gamma = 0.9
     count = 0
-    Gradient = gradient(wc, X, y, l=0.)
+    Gradient = gradient(wc, X, y)
     while not gottol(Gradient, tol):
         count = count + 1
         vel = gamma * vel_prev + eta * gradient(wc, X, y)
         wc = wc - vel
         vel_prev = vel
-        Gradient = gradient(wc, X, y, l=0.)
+        Gradient = gradient(wc, X, y)
     return wc, count
 
 
@@ -317,13 +322,30 @@ def gd_nesterov(winit, X, y, steps=100, eta=0.01, tol=1e-6):
     vel_prev = wc = winit
     gamma = 0.9
     count = 0
-    Gradient = gradient(wc, X, y, l=0.)
+    Gradient = gradient(wc, X, y)
     while not gottol(Gradient, tol):
         count = count + 1
         vel = gamma * vel_prev + eta * gradient(wc - gamma * vel_prev, X, y)
         wc = wc - vel
         vel_prev = vel
-        Gradient = gradient(wc, X, y, l=0.)
+        Gradient = gradient(wc, X, y)
+    return wc, count
+
+
+# Implemented by Harsh
+# https://github.com/benbo/adagrad
+def adagrad(w, X, y, steps=1000, eta=1e-2, tol=1e-6):
+    count = 0
+    fudge_factor = 1e-8
+    gti = np.zeros(w.shape[0])
+    wc = w
+    grad = gradient(wc, X, y)
+    while not gottol(grad, tol):
+        count = count + 1
+        gti += grad**2
+        adjusted_grad = grad / (fudge_factor + np.sqrt(gti))
+        wc = wc - eta * adjusted_grad
+        grad = gradient(wc, X, y)
     return wc, count
 
 
@@ -367,8 +389,11 @@ w_b1, c_b1, count_b1 = btoptimizer_while(
     w, X, y, steps=100000, eta=1e-3, tol=1e-6)
 print('{:<25}{}{}'.format('backtracking (while):', w_b1, count_b1))
 
-w_m, count_m = gd_momentum(w, X, y, steps=100000, eta=1e-2, tol=1e-6)
+w_m, count_m = gd_momentum(w, X, y, steps=0, eta=1e-2, tol=1e-6)
 print('{:<25}{}{}'.format('Momentum:', w_m, count_m))
 
-w_n, count_n = gd_nesterov(w, X, y, steps=100000, eta=1e-3, tol=1e-6)
+w_n, count_n = gd_nesterov(w, X, y, steps=0, eta=1e-3, tol=1e-6)
 print('{:<25}{}{}'.format('Nesterov:', w_n, count_n))
+
+w_adg, count_adg = adagrad(w, X, y, steps=0, eta=1, tol=1e-6)
+print('{:<25}{}{}'.format('Adagrad:', w_adg, count_adg))

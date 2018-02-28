@@ -368,6 +368,33 @@ def rmsprop(w, X, y, steps=0, eta=1e-3, tol=1e-6):
     return wc, count
 
 
+def adam(w, X, y, steps=10000, eta=1e-2, tol=1e-6):
+    beta1 = 0.9
+    beta2 = 0.999
+    eps = 1e-8
+    wc = w
+    mt, vt = 0, 0
+
+    i = 0
+    while True:
+        i = i + 1
+        grad = gradient(wc, X, y)
+
+        mt = beta1 * mt + (1 - beta1) * grad
+        vt = beta2 * vt + (1 - beta2) * (grad**2)
+
+        m = mt / (1 - beta1**i)
+        v = vt / (1 - beta2**i)
+
+        wp = wc
+        wc = wc - eta * m / (np.sqrt(v) + eps)
+
+        if np.linalg.norm(wp - wc) <= tol:
+            break
+
+    return wc, i
+
+
 # https://onlinecourses.science.psu.edu/stat462/node/101
 df = pd.read_excel('test.xlsx')
 X = np.array(df['X'])
@@ -419,3 +446,6 @@ print('{:<25}{}{}'.format('Adagrad:', w_adg, count_adg))
 
 w_rms, count_rms = rmsprop(w, X, y, steps=10000, eta=1e-2, tol=1e-6)
 print('{:<25}{}{}'.format('RMSProp:', w_rms, count_rms))
+
+w_adam, count_adam = adam(w, X, y, steps=10000, eta=1e-3, tol=1e-6)
+print('{:<25}{}{}'.format('RMSProp:', w_adam, count_adam))

@@ -448,4 +448,4 @@ w_rms, count_rms = rmsprop(w, X, y, steps=10000, eta=1e-2, tol=1e-6)
 print('{:<25}{}{}'.format('RMSProp:', w_rms, count_rms))
 
 w_adam, count_adam = adam(w, X, y, steps=10000, eta=1e-3, tol=1e-6)
-print('{:<25}{}{}'.format('RMSProp:', w_adam, count_adam))
+print('{:<25}{}{}'.format('Adagrad:', w_adam, count_adam))

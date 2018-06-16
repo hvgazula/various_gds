@@ -368,17 +368,17 @@ def rmsprop(w, X, y, steps=0, eta=1e-3, tol=1e-6):
     return wc, count
 
 
-def adam(w, X, y, steps=10000, eta=1e-2, tol=1e-6):
+def adam(w, X, y, steps=10000, eta=1e-2, tol=1e-2):
     beta1 = 0.9
     beta2 = 0.999
     eps = 1e-8
-    wc = w
+    wp = w
     mt, vt = 0, 0
 
     i = 0
     while True:
         i = i + 1
-        grad = gradient(wc, X, y)
+        grad = gradient(wp, X, y)
 
         mt = beta1 * mt + (1 - beta1) * grad
         vt = beta2 * vt + (1 - beta2) * (grad**2)
@@ -386,66 +386,77 @@ def adam(w, X, y, steps=10000, eta=1e-2, tol=1e-6):
         m = mt / (1 - beta1**i)
         v = vt / (1 - beta2**i)
 
-        wp = wc
-        wc = wc - eta * m / (np.sqrt(v) + eps)
-
+        wc = wp - eta * m / (np.sqrt(v) + eps)
+        print(wc)
         if np.linalg.norm(wp - wc) <= tol:
             break
+
+        wp = wc
 
     return wc, i
 
 
 # https://onlinecourses.science.psu.edu/stat462/node/101
-df = pd.read_excel('test.xlsx')
-X = np.array(df['X'])
-X = np.array([[1] * len(X), X]).T
-y = np.array(df['Y']).T
+#df = pd.read_excel('test.xlsx')
+#X = np.array(df['X'])
+#X = np.array([[1] * len(X), X]).T
+#y = np.array(df['Y']).T
 
-w = np.array([0, 0])
+#### msr_test_simple_example
+#X = np.array([[1, 1], [1, 2], [1, 3], [1, 4], [1, 5]])
+#y = np.array([1,2,3,4,5]).T
+#w = np.array([0, 0])
+
+# msr_test_fsl
+X = np.array([[1,0,22], [1, 1, 47], [1, 0, 56], [1, 1, 73]])
+#y = np.array([2115.49, 4019.55, 4934.63, 9360.22])  # 3rd ventricle
+#y = np.array([1359.72, 3587.1, 3683.96, 8444.98])  # 4th ventricle
+y = np.array([ 6188.1, 10824.89, 12807.25, 18943.92])  # 5th ventricle
+w = np.array([0, 0, 0])
 
 # Pooled Algorithms
-normal_w = np.matmul(np.linalg.inv(np.matmul(X.T, X)), np.matmul(X.T, y))
-print('{:<25}{}'.format('Normal Equation:', normal_w))
+#normal_w = np.matmul(np.linalg.inv(np.matmul(X.T, X)), np.matmul(X.T, y))
+#print('{:<25}{}'.format('Normal Equation:', normal_w))
+#
+#model = sm.OLS(y, X.astype(float)).fit()
+#print('{:<25}{}'.format('Stats Models:', model.params))
+#
+#w1, count1 = gd_for(w, X, y, steps=100000, eta=1e-3, tol=1e-6)
+#print('{:<25}{}{}'.format('Vanilla_GD (for loop):', w1, count1))
+#
+#w2, count2 = gd_while(w, X, y, steps=100000, eta=1e-3, tol=1e-6)
+#print('{:<25}{}{}'.format('Vanilla_GD (while loop):', w2, count2))
+#
+#w_v, c_v, count_v = gd_for_heuristic(w, X, y, steps=100000, eta=1e-3, tol=1e-6)
+#print('{:<25}{}{}'.format('gd_for_heuristic:', w_v, count_v))
+#
+#w3, c3, count3 = gd_while_heuristic(w, X, y, steps=100000, eta=1e-3, tol=1e-6)
+#print('{:<25}{}{}'.format('gd_while_heuristic:', w3, count3))
+#
+#w_a, c_a, count_a = adoptimizer(w, X, y, steps=100000, tol=1e-6)
+#print('{:<25}{}{}'.format('adadelta (for loop):', w_a, count_a))
+#
+#w_a1, c_a1, count_a1 = adoptimizer_while(w, X, y, steps=100000, tol=1e-6)
+#print('{:<25}{}{}'.format('adadelta (while loop):', w_a1, count_a1))
+#
+#w_b, c_b, count_b = btoptimizer(w, X, y, steps=100000, eta=1e-3, tol=1e-6)
+#print('{:<25}{}{}'.format('backtracking (for):', w_b, count_b))
+#
+#w_b1, c_b1, count_b1 = btoptimizer_while(
+#    w, X, y, steps=100000, eta=1e-3, tol=1e-6)
+#print('{:<25}{}{}'.format('backtracking (while):', w_b1, count_b1))
+#
+#w_m, count_m = gd_momentum(w, X, y, steps=0, eta=1e-2, tol=1e-6)
+#print('{:<25}{}{}'.format('Momentum:', w_m, count_m))
+#
+#w_n, count_n = gd_nesterov(w, X, y, steps=0, eta=1e-3, tol=1e-6)
+#print('{:<25}{}{}'.format('Nesterov:', w_n, count_n))
+#
+#w_adg, count_adg = adagrad(w, X, y, steps=0, eta=1, tol=1e-6)
+#print('{:<25}{}{}'.format('Adagrad:', w_adg, count_adg))
+#
+#w_rms, count_rms = rmsprop(w, X, y, steps=10000, eta=1e-2, tol=1e-6)
+#print('{:<25}{}{}'.format('RMSProp:', w_rms, count_rms))
 
-model = sm.OLS(y, X.astype(float)).fit()
-print('{:<25}{}'.format('Stats Models:', model.params))
-
-w1, count1 = gd_for(w, X, y, steps=100000, eta=1e-3, tol=1e-6)
-print('{:<25}{}{}'.format('Vanilla_GD (for loop):', w1, count1))
-
-w2, count2 = gd_while(w, X, y, steps=100000, eta=1e-3, tol=1e-6)
-print('{:<25}{}{}'.format('Vanilla_GD (while loop):', w2, count2))
-
-w_v, c_v, count_v = gd_for_heuristic(w, X, y, steps=100000, eta=1e-3, tol=1e-6)
-print('{:<25}{}{}'.format('gd_for_heuristic:', w_v, count_v))
-
-w3, c3, count3 = gd_while_heuristic(w, X, y, steps=100000, eta=1e-3, tol=1e-6)
-print('{:<25}{}{}'.format('gd_while_heuristic:', w3, count3))
-
-w_a, c_a, count_a = adoptimizer(w, X, y, steps=100000, tol=1e-6)
-print('{:<25}{}{}'.format('adadelta (for loop):', w_a, count_a))
-
-w_a1, c_a1, count_a1 = adoptimizer_while(w, X, y, steps=100000, tol=1e-6)
-print('{:<25}{}{}'.format('adadelta (while loop):', w_a1, count_a1))
-
-w_b, c_b, count_b = btoptimizer(w, X, y, steps=100000, eta=1e-3, tol=1e-6)
-print('{:<25}{}{}'.format('backtracking (for):', w_b, count_b))
-
-w_b1, c_b1, count_b1 = btoptimizer_while(
-    w, X, y, steps=100000, eta=1e-3, tol=1e-6)
-print('{:<25}{}{}'.format('backtracking (while):', w_b1, count_b1))
-
-w_m, count_m = gd_momentum(w, X, y, steps=0, eta=1e-2, tol=1e-6)
-print('{:<25}{}{}'.format('Momentum:', w_m, count_m))
-
-w_n, count_n = gd_nesterov(w, X, y, steps=0, eta=1e-3, tol=1e-6)
-print('{:<25}{}{}'.format('Nesterov:', w_n, count_n))
-
-w_adg, count_adg = adagrad(w, X, y, steps=0, eta=1, tol=1e-6)
-print('{:<25}{}{}'.format('Adagrad:', w_adg, count_adg))
-
-w_rms, count_rms = rmsprop(w, X, y, steps=10000, eta=1e-2, tol=1e-6)
-print('{:<25}{}{}'.format('RMSProp:', w_rms, count_rms))
-
-w_adam, count_adam = adam(w, X, y, steps=10000, eta=1e-3, tol=1e-6)
-print('{:<25}{}{}'.format('Adagrad:', w_adam, count_adam))
+w_adam, count_adam = adam(w, X, y, steps=10000, eta=1000, tol=100)
+print('{:<25}{}{}'.format('Adam:', w_adam, count_adam))
